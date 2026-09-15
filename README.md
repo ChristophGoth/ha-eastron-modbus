@@ -66,17 +66,28 @@ truncated replies and timeouts. Truncated reads are rejected rather than
 decoded into wrong values, and the log then asks whether another master is on
 the bus. Remove the other poller; there is no setting that makes sharing work.
 
-Values that are mostly of interest when diagnosing a problem — THD, demand
-figures, per-phase energy counters, phase angles, apparent energy and ampere
-hours — are created but disabled by default. Enable them per entity in the
-device page if you want them.
+Most registers are created disabled by default; see *Entities* below for what
+is enabled and how to turn on the rest.
 
 ## Entities
 
-The SDM120 exposes 18 values: voltage, current, active/apparent/reactive
-power, power factor, frequency, the four energy counters and the totals. The
-SDM630 exposes 62: per-phase values for each of those, line-to-line voltages,
-neutral current, THD and system-wide totals.
+The SDM120 exposes 18 values and the SDM630 62, but most are created disabled
+so a fresh install stays readable. Enabled by default are the everyday
+quantities — voltage, current, power, power factor, frequency and the import
+and export energy counters:
+
+| Meter  | Enabled | Total |
+| ------ | ------- | ----- |
+| SDM120 | 7       | 18    |
+| SDM630 | 19      | 62    |
+
+On the SDM630 those are the per-phase values (L1/L2/L3) plus the averages and
+system totals for power and power factor.
+
+Everything else — apparent and reactive power, reactive energy, the total
+energy registers, line-to-line voltages, neutral current, THD, demand figures,
+phase angles, apparent energy, ampere hours and the per-phase energy counters
+— is created but disabled. Enable what you need per entity on the device page.
 
 Device classes follow Home Assistant's own validation tables:
 
