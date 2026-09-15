@@ -23,6 +23,7 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfFrequency,
     UnitOfPower,
+    UnitOfReactiveEnergy,
     UnitOfReactivePower,
 )
 
@@ -129,7 +130,8 @@ def _kvarh(key: str, name: str, address: int, **kw: object) -> EastronRegister:
         key=key,
         name=name,
         address=address,
-        unit="kvarh",
+        unit=UnitOfReactiveEnergy.KILO_VOLT_AMPERE_REACTIVE_HOUR,
+        device_class=SensorDeviceClass.REACTIVE_ENERGY,
         state_class=TOTAL_INCREASING,
         precision=3,
         **kw,  # type: ignore[arg-type]
@@ -241,6 +243,8 @@ SDM630_REGISTERS: tuple[EastronRegister, ...] = (
     _kwh("export_active_energy", "Export active energy", 74),
     _kvarh("import_reactive_energy", "Import reactive energy", 76),
     _kvarh("export_reactive_energy", "Export reactive energy", 78),
+    # Home Assistant has no apparent-energy device class and no ampere-hour
+    # unit, so these two carry a bare unit string and no device class.
     EastronRegister(
         key="total_apparent_energy",
         name="Total apparent energy",
