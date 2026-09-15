@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Modbus gateway",
+        "description": "Address of the Modbus-to-Ethernet gateway the meters are connected to. The gateway must be in RTU-over-TCP mode.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "scan_interval": "Poll interval (seconds)"
+        }
+      },
+      "meter": {
+        "title": "Add a meter",
+        "description": "Enter the Modbus slave address of a meter on the bus and the name it should appear under in Home Assistant. The model is detected automatically.",
+        "data": {
+          "slave_id": "Modbus slave address",
+          "name": "Name"
+        }
+      },
+      "add_another": {
+        "title": "Add another meter?",
+        "description": "Added {name} ({model}) at slave address {slave_id}.",
+        "data": {
+          "add_another": "Add another meter"
+        }
+      }
+    },
+    "error": {
+      "no_meter": "No meter answered at this slave address. Check the address and the wiring.",
+      "unknown_model": "A device answered but is not a supported Eastron SDM meter.",
+      "duplicate_slave": "This slave address is already configured."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    }
+  }
+}

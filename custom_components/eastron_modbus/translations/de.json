@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Modbus-Gateway",
+        "description": "Adresse des Modbus-zu-Ethernet-Gateways, an dem die Zähler angeschlossen sind. Das Gateway muss im RTU-over-TCP-Modus betrieben werden.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      },
+      "meter": {
+        "title": "Zähler hinzufügen",
+        "description": "Modbus-Slave-Adresse eines Zählers am Bus und den Namen eingeben, unter dem er in Home Assistant erscheinen soll. Das Modell wird automatisch erkannt.",
+        "data": {
+          "slave_id": "Modbus-Slave-Adresse",
+          "name": "Name"
+        }
+      },
+      "add_another": {
+        "title": "Weiteren Zähler hinzufügen?",
+        "description": "{name} ({model}) auf Slave-Adresse {slave_id} hinzugefügt.",
+        "data": {
+          "add_another": "Weiteren Zähler hinzufügen"
+        }
+      }
+    },
+    "error": {
+      "no_meter": "Auf dieser Slave-Adresse hat kein Zähler geantwortet. Adresse und Verkabelung prüfen.",
+      "unknown_model": "Ein Gerät hat geantwortet, ist aber kein unterstützter Eastron-SDM-Zähler.",
+      "duplicate_slave": "Diese Slave-Adresse ist bereits konfiguriert."
+    },
+    "abort": {
+      "already_configured": "Dieses Gateway ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      }
+    }
+  }
+}
