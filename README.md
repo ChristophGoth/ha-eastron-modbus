@@ -12,11 +12,20 @@ Supported meters:
 | SDM120 | `0x0020`   | 1P2W   |
 | SDM630 | `0x0070`   | 3P4W   |
 
+<p>
+  <img src="sdm120-m.webp" alt="Eastron SDM120-M" height="200">
+  <img src="eastron-sdm630-smart-meter.jpg" alt="Eastron SDM630-Modbus V2" height="200">
+</p>
+
 ## Requirements
 
 Home Assistant 2025.6.0 or newer. The reactive energy counters use the
 `reactive_energy` device class, which was added in that release; on older
 versions Home Assistant rejects those six sensors.
+
+The integration ships its own brand icon in `custom_components/eastron_modbus/brand/`.
+Home Assistant only reads local brand images from 2026.3 onwards; on older
+versions the icon is simply not shown and everything else works unchanged.
 
 ## Installation
 
@@ -88,6 +97,26 @@ Everything else — apparent and reactive power, reactive energy, the total
 energy registers, line-to-line voltages, neutral current, THD, demand figures,
 phase angles, apparent energy, ampere hours and the per-phase energy counters
 — is created but disabled. Enable what you need per entity on the device page.
+
+### Diagnostics
+
+Each meter also carries six diagnostic entities reporting how its own polling
+is going. They live under *Diagnostic* on the device page and are enabled by
+default, since they are what tells you a meter has gone quiet:
+
+| Entity | Meaning |
+| ------ | ------- |
+| Poll status | `ok`, `timeout` (nothing answered), `invalid` (truncated frame — usually a second master on the bus) or `error`. Carries the last error text as an attribute. |
+| Poll duration | How long the last full refresh took, in milliseconds |
+| Last successful poll | Timestamp of the last good read |
+| Consecutive failures | Resets to zero on the next success |
+| Failed polls | Running total since Home Assistant started |
+| Poll success rate | Share of polls that succeeded, in percent |
+
+Unlike the measurement entities, these stay available while a meter is
+failing — otherwise they could not report the failure.
+
+### Device classes
 
 Device classes follow Home Assistant's own validation tables:
 
