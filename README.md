@@ -12,6 +12,12 @@ Supported meters:
 | SDM120 | `0x0020`   | 1P2W   |
 | SDM630 | `0x0070`   | 3P4W   |
 
+## Requirements
+
+Home Assistant 2025.6.0 or newer. The reactive energy counters use the
+`reactive_energy` device class, which was added in that release; on older
+versions Home Assistant rejects those six sensors.
+
 ## Installation
 
 ### HACS
@@ -39,14 +45,14 @@ The poll interval can be changed later under the entry's *Configure* option.
 
 ## How it works
 
-All meters behind one gateway share a single TCP connection, because the
-gateway funnels them onto one RS485 bus. Requests are serialised with a lock
-and spaced slightly apart, so frames from different meters cannot interleave
-and corrupt each other on the wire.
+All meters behind one gateway share a single TCP connection and one lock,
+because the gateway funnels them onto a single RS485 bus. Only one request is
+in flight at a time, with a short gap between requests.
 
 Each meter is polled by its own coordinator. Reads are grouped into blocks of
 adjacent registers — the meters cap one response at 40 registers, so a full
-SDM630 refresh costs a handful of round trips instead of one per value.
+SDM630 refresh costs 6 requests and an SDM120 costs 4, rather than one per
+value. Measured against real hardware: 1.4 s for the SDM630, 0.7 s per SDM120.
 
 Entities are keyed by the meter's hardware serial number rather than its slave
 address, so history survives readdressing a meter on the bus.
@@ -61,18 +67,32 @@ decoded into wrong values, and the log then asks whether another master is on
 the bus. Remove the other poller; there is no setting that makes sharing work.
 
 Values that are mostly of interest when diagnosing a problem — THD, demand
-figures, per-phase energy counters, phase angles — are created but disabled by
-default. Enable them per entity if you want them.
+figures, per-phase energy counters, phase angles, apparent energy and ampere
+hours — are created but disabled by default. Enable them per entity in the
+device page if you want them.
 
 ## Entities
 
-The SDM120 exposes voltage, current, active/apparent/reactive power, power
-factor, frequency, the four energy counters and the totals. The SDM630 adds
-per-phase values for each of those, line-to-line voltages, neutral current and
-system-wide totals.
+The SDM120 exposes 18 values: voltage, current, active/apparent/reactive
+power, power factor, frequency, the four energy counters and the totals. The
+SDM630 exposes 62: per-phase values for each of those, line-to-line voltages,
+neutral current, THD and system-wide totals.
 
-Energy counters are `total_increasing` with the `energy` device class, so
-import and export can be used directly in the Energy dashboard.
+Device classes follow Home Assistant's own validation tables:
+
+| Values | Device class | State class |
+| ------ | ------------ | ----------- |
+| Voltage, current, power, apparent/reactive power, frequency | matching class | `measurement` |
+| Power factor | `power_factor` (unitless) | `measurement` |
+| kWh counters | `energy` | `total_increasing` |
+| kvarh counters | `reactive_energy` | `total_increasing` |
+
+Active energy counters can be used directly in the Energy dashboard.
+
+Four value types carry a unit but no device class, because Home Assistant has
+no matching one: apparent energy (kVAh), ampere hours (Ah), THD (%) and phase
+angle (°). Assigning a device class to these would make Home Assistant reject
+the state.
 
 ## Register documentation
 
