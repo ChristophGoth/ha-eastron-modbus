@@ -1,5 +1,9 @@
 # Eastron SDM Modbus for Home Assistant
 
+[![hacs][hacs-badge]][hacs-url]
+[![release][release-badge]][release-url]
+[![license][license-badge]](LICENSE)
+
 Home Assistant integration for Eastron SDM energy meters reached over a
 Modbus-to-Ethernet gateway (RTU over TCP). Several meters share one gateway;
 each is addressed by its Modbus slave address and appears in Home Assistant as
@@ -136,11 +140,62 @@ the state.
 
 ## Register documentation
 
-The register maps were transcribed from the Eastron protocol specifications in
-this repository and verified against live hardware:
+The register maps were transcribed from the Eastron protocol specifications and
+verified against live hardware:
 
-- `SDM120-MODBUS_Protocol.pdf` — SDM120 V2.4
-- `SDM630_MODBUS_Protocol.pdf` — SDM630 V1.8
+- `docs/SDM120-MODBUS_Protocol.pdf` — SDM120 V2.4
+- `docs/SDM630_MODBUS_Protocol.pdf` — SDM630 V1.8
 
 All measured values are 32-bit IEEE-754 floats spanning two input registers,
 read with function code 04, most significant register first.
+
+The PDFs are vendor documents and are not redistributed here; they are kept
+locally in `docs/` and excluded from the repository.
+
+## Changes
+
+Every version and its changes are listed in the [changelog](CHANGELOG.md).
+
+## Development
+
+Development happens on a private GitLab instance; GitHub carries the published
+releases so that HACS can find them.
+
+A tag on `main` triggers the pipeline in [`.gitlab-ci.yml`](.gitlab-ci.yml):
+
+1. **validate** — syntax check, JSON validation, comparison of the translation
+   files against each other, and a check that the manifest version matches the
+   tag.
+2. **release-to-github** — mirrors the commit and the tag to GitHub, creates a
+   release there and attaches `eastron_modbus.zip` as an asset. The release
+   notes come from the matching section of `CHANGELOG.md`.
+
+A release is therefore made like this:
+
+```sh
+# Raise the version in custom_components/eastron_modbus/manifest.json,
+# add a section to CHANGELOG.md, commit both
+git tag v0.2.0
+git push origin main --follow-tags
+```
+
+If the manifest version differs from the tag, the pipeline stops before
+anything is published.
+
+The pipeline needs the CI/CD variable `GITHUB_PAT` — a GitHub token with `repo`
+scope, stored masked and protected.
+
+## Disclaimer
+
+This project is not affiliated with Eastron Electronic Co., Ltd. "Eastron" and
+"SDM" are trademarks of their respective owners. Use at your own risk.
+
+## License
+
+[MIT](LICENSE)
+
+[hacs-badge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg
+[hacs-url]: https://hacs.xyz
+[release-badge]: https://img.shields.io/github/v/release/ChristophGoth/ha-eastron-modbus?display_name=tag
+[release-url]: https://github.com/ChristophGoth/ha-eastron-modbus/releases
+[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
