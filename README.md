@@ -156,35 +156,6 @@ locally in `docs/` and excluded from the repository.
 
 Every version and its changes are listed in the [changelog](CHANGELOG.md).
 
-## Development
-
-Development happens on a private GitLab instance; GitHub carries the published
-releases so that HACS can find them.
-
-A tag on `main` triggers the pipeline in [`.gitlab-ci.yml`](.gitlab-ci.yml):
-
-1. **validate** — syntax check, JSON validation, comparison of the translation
-   files against each other, and a check that the manifest version matches the
-   tag.
-2. **release-to-github** — mirrors the commit and the tag to GitHub, creates a
-   release there and attaches `eastron_modbus.zip` as an asset. The release
-   notes come from the matching section of `CHANGELOG.md`.
-
-A release is therefore made like this:
-
-```sh
-# Raise the version in custom_components/eastron_modbus/manifest.json,
-# add a section to CHANGELOG.md, commit both
-git tag v0.2.0
-git push origin main --follow-tags
-```
-
-If the manifest version differs from the tag, the pipeline stops before
-anything is published.
-
-The pipeline needs the CI/CD variable `GITHUB_PAT` — a GitHub token with `repo`
-scope, stored masked and protected.
-
 ## Disclaimer
 
 This project is not affiliated with Eastron Electronic Co., Ltd. "Eastron" and
