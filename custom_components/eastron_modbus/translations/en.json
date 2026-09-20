@@ -38,11 +38,43 @@
   "options": {
     "step": {
       "init": {
-        "title": "Options",
+        "title": "Eastron options",
+        "menu_options": {
+          "interval": "Change the poll interval",
+          "add_meter": "Add a meter",
+          "remove_meter": "Remove a meter"
+        }
+      },
+      "interval": {
+        "title": "Poll interval",
         "data": {
           "scan_interval": "Poll interval (seconds)"
         }
+      },
+      "add_meter": {
+        "title": "Add a meter",
+        "description": "Enter the Modbus slave address of a meter on the bus and the name it should appear under in Home Assistant. The model is detected automatically.",
+        "data": {
+          "slave_id": "Modbus slave address",
+          "name": "Name"
+        }
+      },
+      "remove_meter": {
+        "title": "Remove a meter",
+        "description": "Select the meters to remove. Their devices, entities and history are deleted; the other meters on this gateway keep working.",
+        "data": {
+          "slave_id": "Meters"
+        }
       }
+    },
+    "error": {
+      "no_meter": "No meter answered at this slave address. Check the address and the wiring.",
+      "unknown_model": "A device answered but is not a supported Eastron SDM meter.",
+      "duplicate_slave": "This slave address is already configured.",
+      "last_meter": "This is the last meter on this gateway. Delete the integration entry instead of removing it."
+    },
+    "abort": {
+      "last_meter": "This is the last meter on this gateway. Delete the integration entry instead of removing it."
     }
   }
 }

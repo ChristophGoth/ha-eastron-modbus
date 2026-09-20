@@ -38,11 +38,43 @@
   "options": {
     "step": {
       "init": {
-        "title": "Optionen",
+        "title": "Eastron-Optionen",
+        "menu_options": {
+          "interval": "Abfrageintervall ändern",
+          "add_meter": "Zähler hinzufügen",
+          "remove_meter": "Zähler entfernen"
+        }
+      },
+      "interval": {
+        "title": "Abfrageintervall",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)"
         }
+      },
+      "add_meter": {
+        "title": "Zähler hinzufügen",
+        "description": "Modbus-Slave-Adresse eines Zählers am Bus und den Namen eingeben, unter dem er in Home Assistant erscheinen soll. Das Modell wird automatisch erkannt.",
+        "data": {
+          "slave_id": "Modbus-Slave-Adresse",
+          "name": "Name"
+        }
+      },
+      "remove_meter": {
+        "title": "Zähler entfernen",
+        "description": "Die zu entfernenden Zähler auswählen. Ihre Geräte, Entitäten und deren Verlauf werden gelöscht; die übrigen Zähler an diesem Gateway laufen weiter.",
+        "data": {
+          "slave_id": "Zähler"
+        }
       }
+    },
+    "error": {
+      "no_meter": "Auf dieser Slave-Adresse hat kein Zähler geantwortet. Adresse und Verkabelung prüfen.",
+      "unknown_model": "Ein Gerät hat geantwortet, ist aber kein unterstützter Eastron-SDM-Zähler.",
+      "duplicate_slave": "Diese Slave-Adresse ist bereits konfiguriert.",
+      "last_meter": "Dies ist der letzte Zähler an diesem Gateway. Statt ihn zu entfernen, den Integrationseintrag löschen."
+    },
+    "abort": {
+      "last_meter": "Dies ist der letzte Zähler an diesem Gateway. Statt ihn zu entfernen, den Integrationseintrag löschen."
     }
   }
 }

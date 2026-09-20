@@ -54,7 +54,11 @@ Copy `custom_components/eastron_modbus` into your Home Assistant
    registers, and refuses addresses where nothing answers.
 3. Repeat until every meter is added.
 
-The poll interval can be changed later under the entry's *Configure* option.
+The entry's *Configure* option opens a menu to change the poll interval, add a
+meter, or remove one. Removing a meter deletes its device, entities and their
+history; the other meters on the same gateway are untouched. A single meter can
+also be removed straight from its device page with *Delete device*. The last
+meter of a gateway cannot be removed — delete the integration entry instead.
 
 ## How it works
 

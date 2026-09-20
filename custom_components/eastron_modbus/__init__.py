@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 
 from .const import (
     CONF_METERS,
@@ -98,3 +99,46 @@ async def async_unload_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> 
 async def async_reload_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> None:
     """Reload when the poll interval changes."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: EastronConfigEntry, device: dr.DeviceEntry
+) -> bool:
+    """Let a single meter be deleted from its device page.
+
+    Devices are keyed by hardware serial, so map the serial back to the slave
+    id and drop that meter from the entry. Removing the last meter is refused:
+    the entry would then poll nothing, and deleting it is the honest way out.
+    """
+    serials = {
+        str(coordinator.identity.serial): coordinator.slave_id
+        for coordinator in entry.runtime_data.coordinators
+    }
+    slave_id = next(
+        (
+            serials[identifier]
+            for domain, identifier in device.identifiers
+            if domain == DOMAIN and identifier in serials
+        ),
+        None,
+    )
+    if slave_id is None:
+        # Not one of our meters (the gateway's own via_device entry, or a
+        # leftover from an older config): nothing depends on it.
+        return True
+
+    meters = [
+        meter for meter in entry.data[CONF_METERS] if meter[CONF_SLAVE_ID] != slave_id
+    ]
+    if not meters:
+        _LOGGER.warning(
+            "Refusing to remove the last meter of %s; delete the integration entry instead",
+            entry.title,
+        )
+        return False
+
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_METERS: meters}
+    )
+    hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+    return True

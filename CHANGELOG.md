@@ -5,6 +5,20 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.2.0]
+
+### Hinzugefügt
+
+* Einzelne Zähler lassen sich nachträglich entfernen und hinzufügen, ohne die
+  Integration neu einzurichten: über die Optionen des Eintrags oder direkt über
+  "Gerät löschen" auf der Geräteseite eines Zählers. Die übrigen Zähler am
+  selben Gateway behalten dabei ihre Entitäten und deren Verlauf.
+
+### Geändert
+
+* Die Optionen zeigen jetzt ein Menü. Das Abfrageintervall liegt darin unter
+  "Abfrageintervall ändern".
+
 ## [0.1.2]
 
 ### Behoben
