@@ -17,6 +17,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    slave_identifier,
 )
 from .coordinator import EastronMeterCoordinator
 from .hub import EastronHub, EastronModbusError
@@ -47,15 +48,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> b
     )
 
     coordinators: list[EastronMeterCoordinator] = []
+    unreachable: list[str] = []
     for meter in entry.data[CONF_METERS]:
         slave_id = meter[CONF_SLAVE_ID]
         try:
             identity = await hub.async_read_identity(slave_id)
         except EastronModbusError as err:
-            await hub.async_close()
-            raise ConfigEntryNotReady(
-                f"Meter '{meter[CONF_NAME]}' (slave {slave_id}) did not answer: {err}"
-            ) from err
+            # One dead meter must not take the gateway down with it: the others
+            # are on the same bus and still answering, and a meter that is gone
+            # for good can only be removed while the entry is usable.
+            _LOGGER.warning(
+                "Meter '%s' (slave %s) did not answer and is skipped: %s",
+                meter[CONF_NAME],
+                slave_id,
+                err,
+            )
+            unreachable.append(f"'{meter[CONF_NAME]}' (slave {slave_id})")
+            continue
 
         # Trust the stored model if the meter reports something unfamiliar,
         # so a firmware quirk cannot strand an already working entry.
@@ -82,6 +91,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> b
         await coordinator.async_config_entry_first_refresh()
         coordinators.append(coordinator)
 
+    if not coordinators:
+        # Nothing answered at all, which points at the gateway rather than at
+        # the meters: retry instead of loading an entry that has no devices.
+        await hub.async_close()
+        raise ConfigEntryNotReady(
+            f"No meter behind {hub.target} answered: {', '.join(unreachable)}"
+        )
+
+    if unreachable:
+        _LOGGER.warning(
+            "%s of %s meters behind %s are unreachable: %s. "
+            "Remove a meter that is gone for good from its device page or the "
+            "entry's options.",
+            len(unreachable),
+            len(entry.data[CONF_METERS]),
+            hub.target,
+            ", ".join(unreachable),
+        )
+
     entry.runtime_data = EastronRuntimeData(hub, coordinators)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -91,8 +119,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> b
 async def async_unload_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> bool:
     """Tear down the platforms and close the shared socket."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unloaded:
-        await entry.runtime_data.hub.async_close()
+    # A setup that raised before storing its runtime data has no hub to close.
+    runtime = getattr(entry, "runtime_data", None)
+    if unloaded and runtime is not None:
+        await runtime.hub.async_close()
     return unloaded
 
 
@@ -101,30 +131,58 @@ async def async_reload_entry(hass: HomeAssistant, entry: EastronConfigEntry) -> 
     await hass.config_entries.async_reload(entry.entry_id)
 
 
+def _slave_id_for_device(entry: EastronConfigEntry, device: dr.DeviceEntry) -> int | None:
+    """Work out which configured meter a device stands for.
+
+    Devices created since 0.2.1 carry their slave id as a second identifier,
+    which resolves without the entry being loaded. Older devices only have the
+    hardware serial, so fall back to the running coordinators and then to the
+    device name, which is the meter name the entry still stores.
+    """
+    meters = entry.data[CONF_METERS]
+
+    for meter in meters:
+        if slave_identifier(meter[CONF_SLAVE_ID]) in device.identifiers:
+            return meter[CONF_SLAVE_ID]
+
+    serials = {
+        identifier
+        for domain, identifier in device.identifiers
+        if domain == DOMAIN and not identifier.startswith("slave:")
+    }
+    if not serials:
+        return None
+
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is not None:
+        for coordinator in runtime.coordinators:
+            if str(coordinator.identity.serial) in serials:
+                return coordinator.slave_id
+
+    # Unloaded, and the device predates the slave identifier: the device name
+    # is the meter name the entry stores, so match on it as long as it is not
+    # shared by two meters. Deliberately not name_by_user - a device the user
+    # renamed no longer carries the configured name.
+    named = [meter for meter in meters if meter[CONF_NAME] == device.name]
+    if len(named) == 1:
+        return named[0][CONF_SLAVE_ID]
+
+    return None
+
+
 async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: EastronConfigEntry, device: dr.DeviceEntry
 ) -> bool:
     """Let a single meter be deleted from its device page.
 
-    Devices are keyed by hardware serial, so map the serial back to the slave
-    id and drop that meter from the entry. Removing the last meter is refused:
-    the entry would then poll nothing, and deleting it is the honest way out.
+    This has to work while the entry is unloaded: a meter that no longer
+    answers keeps the whole entry from starting, and removing it is how the
+    user fixes that, so nothing here may depend on runtime state.
     """
-    serials = {
-        str(coordinator.identity.serial): coordinator.slave_id
-        for coordinator in entry.runtime_data.coordinators
-    }
-    slave_id = next(
-        (
-            serials[identifier]
-            for domain, identifier in device.identifiers
-            if domain == DOMAIN and identifier in serials
-        ),
-        None,
-    )
+    slave_id = _slave_id_for_device(entry, device)
     if slave_id is None:
-        # Not one of our meters (the gateway's own via_device entry, or a
-        # leftover from an older config): nothing depends on it.
+        # Not a meter of this entry, or one no longer in its data: the device
+        # is an orphan either way, so let it go.
         return True
 
     meters = [

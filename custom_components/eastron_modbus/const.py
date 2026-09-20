@@ -30,3 +30,15 @@ METER_CODE_TO_MODEL: Final[dict[int, str]] = {
     METER_CODE_SDM120: MODEL_SDM120,
     METER_CODE_SDM630: MODEL_SDM630,
 }
+
+
+def slave_identifier(slave_id: int) -> tuple[str, str]:
+    """Device registry identifier carrying a meter's slave address.
+
+    A meter's primary identifier is its hardware serial, which only a running
+    coordinator can read. This second identifier records the bus address the
+    meter was configured under, so it stays resolvable while the entry is
+    unloaded - which is exactly when a meter that no longer answers has to be
+    removed.
+    """
+    return (DOMAIN, f"slave:{slave_id}")

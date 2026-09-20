@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import EastronConfigEntry
-from .const import DOMAIN
+from .const import DOMAIN, slave_identifier
 from .coordinator import (
     STATUS_ERROR,
     STATUS_INVALID,
@@ -54,7 +54,10 @@ def _device_info(coordinator: EastronMeterCoordinator) -> DeviceInfo:
     """Describe the meter this coordinator polls."""
     serial = coordinator.identity.serial
     return DeviceInfo(
-        identifiers={(DOMAIN, str(serial))},
+        # The serial keeps the device stable across readdressing; the slave id
+        # is carried alongside it so a meter can still be identified when the
+        # entry is not loaded and no coordinator exists to ask.
+        identifiers={(DOMAIN, str(serial)), slave_identifier(coordinator.slave_id)},
         name=coordinator.meter_name,
         manufacturer=MANUFACTURER,
         model=coordinator.model,

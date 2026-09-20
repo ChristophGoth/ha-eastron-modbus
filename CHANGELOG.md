@@ -5,6 +5,24 @@ Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.2.1]
+
+### Behoben
+
+* "Gerät löschen" schlug mit `AttributeError: 'ConfigEntry' object has no
+  attribute 'runtime_data'` fehl, wenn der Eintrag nicht geladen war. Zähler
+  werden jetzt über eine am Gerät hinterlegte Slave-Adresse aufgelöst, sodass
+  das Entfernen auch bei nicht startender Integration funktioniert. Bereits
+  angelegte Geräte werden über ihren Namen zugeordnet.
+
+### Geändert
+
+* Ein Zähler, der nicht antwortet, verhindert nicht mehr den Start der
+  gesamten Integration. Die übrigen Zähler am Gateway werden normal
+  eingerichtet, der fehlende wird protokolliert und übersprungen. Nur wenn
+  kein einziger Zähler antwortet, wird der Eintrag zurückgestellt — dann
+  liegt es am Gateway, nicht am Zähler.
+
 ## [0.2.0]
 
 ### Hinzugefügt

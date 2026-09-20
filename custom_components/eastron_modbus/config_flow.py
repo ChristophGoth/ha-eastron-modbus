@@ -22,6 +22,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    slave_identifier,
 )
 from .hub import EastronHub, EastronModbusError
 
@@ -55,27 +56,30 @@ def _async_remove_meter_device(
 ) -> None:
     """Delete the device registry entry of one meter, and so its entities.
 
-    Devices are keyed by hardware serial, which only the running coordinator
-    knows, so ask it; if the entry is not loaded there is nothing to clean up
-    beyond what removing the meter from the entry already does.
+    Devices record their slave id as an identifier, so this works whether or
+    not the entry is loaded. Devices created before that did not, and are
+    matched through the serial their running coordinator reports; if there is
+    no coordinator either, the device is left for the reload to reconcile.
     """
-    runtime = getattr(entry, "runtime_data", None)
-    if runtime is None:
-        return
-
-    serial = next(
-        (c.identity.serial for c in runtime.coordinators if c.slave_id == slave_id),
-        None,
-    )
-    if serial is None:
-        return
-
     registry = dr.async_get(hass)
-    device = registry.async_get_device(identifiers={(DOMAIN, str(serial))})
-    if device is not None:
-        registry.async_update_device(
-            device.id, remove_config_entry_id=entry.entry_id
+    device = registry.async_get_device(identifiers={slave_identifier(slave_id)})
+
+    if device is None:
+        runtime = getattr(entry, "runtime_data", None)
+        serial = next(
+            (
+                c.identity.serial
+                for c in (runtime.coordinators if runtime else [])
+                if c.slave_id == slave_id
+            ),
+            None,
         )
+        if serial is None:
+            return
+        device = registry.async_get_device(identifiers={(DOMAIN, str(serial))})
+
+    if device is not None:
+        registry.async_update_device(device.id, remove_config_entry_id=entry.entry_id)
 
 
 class EastronConfigFlow(ConfigFlow, domain=DOMAIN):
